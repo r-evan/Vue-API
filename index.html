@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <title>Générateur de citations</title>
+</head>
+
+<body>
+    <div id="app">
+        <nav>
+            <a href="#" @click="quoteTargeted()">Ciblé</a>
+            <a href="#" @click="getCitationRandom()">Aléatoire</a>
+        </nav>
+        <div id="particles-js" class="canvas"></div>
+        <div class="box">
+
+            <form action="#" v-if="bool" class="formulaire" v-on:submit.prevent>
+                <div class="formulaire-ligne1">
+                    <label for="text" class="formulaire-label">Pour filtrer la liste ci-dessous : </label>
+                    <input type="search" v-model="searchKey" placeholder="nom de l'oeuvre...">
+                    <p v-if="searchKey && search.length > 0"> {{search.length}} résultat<span
+                            v-if="search.length > 1">s</span></p>
+                </div>
+                <select name="anime" id="anime" v-model="selected" class="formulaire-select" required>
+                    <option value="" disabled>Sélectionner un animé... </option>
+                    <option v-for="anime in search" :value="anime"> {{ anime }} </option>
+                </select>
+                <button @click="getCitationTargeted">Chercher</button>
+            </form>
+
+            <div v-if="quoteReady" class="citation">
+                <p class="citation-anime">Anime : {{uneCitationAnime.anime}}</p>
+                <p>Personnage : {{uneCitationAnime.character}} </p>
+                <p>Citation : {{uneCitationAnime.quote}} </p>
+            </div>
+
+            <div v-show="bool2" class="citation">
+                <p class="citation-anime">Anime : {{random.anime}}</p>
+                <p>Personnage : {{random.character}} </p>
+                <p>Citation : {{random.quote}} </p>
+            </div>
+        </div>
+
+
+    </div>
+</body>
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
+
+
+
+
+<script>
+
+    new Vue({
+        el: '#app',
+        data: {
+            bool: true,
+            bool2: false,
+            quoteReady: false,
+            selected: "",
+            random: [],
+            citationAnime: [],
+            available: [],
+            searchKey: "",
+            uneCitationAnime: [],
+            erreur: "",
+            valeurRandom: 0,
+
+        },
+        methods: {
+            quoteTargeted: function () {
+                this.bool = true;
+                this.bool2 = false;
+            },
+
+            getCitationRandom: function () {
+                this.bool = false;
+                this.bool2 = false;
+                this.quoteReady = false;
+                this.selected = null;
+                this.random = [];
+                axios
+                    .get('https://animechan.vercel.app/api/random')
+                    .then(response => {
+                        this.random = response.data;
+                        this.bool2 = true;
+                    })
+                    .catch(error => console.log(error))
+            },
+            getCitationTargeted: function () {
+                this.citationAnime = null;
+
+                axios
+                    .get('https://animechan.vercel.app/api/quotes/anime?title=' + this.selected)
+                    .then(response => {
+                        this.valeurRandom = Math.floor(Math.random() * response.data.length);
+                        this.uneCitationAnime = response.data[this.valeurRandom];
+                        this.quoteReady = true;
+                    })
+                    .catch(error => console.log(error))
+            }
+        },
+        computed: {
+            search() {
+                return this.available.filter((anime) => {
+                    return anime.toLowerCase().includes(this.searchKey.toLowerCase())
+                })
+
+            }
+        },
+        mounted() {
+            axios
+                .get('https://animechan.vercel.app/api/available/anime')
+                .then(response => (this.available = response.data))
+                .catch(error => console.log(error))
+        }
+
+    })
+</script>
+<script src="particles.js"></script>
+<script src="app.js"></script>
+</html>
